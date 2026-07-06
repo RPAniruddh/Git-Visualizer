@@ -109,6 +109,8 @@ function seed(name) {
       A('feature', 'Fix flaky test');
       break;
     case 'reset': initRepo(r); A('main', 'Initial commit'); A('main', 'Add payments'); A('main', 'Refactor API'); A('main', 'Oops — break the build'); break;
+    case 'squash': initRepo(r); A('main', 'Initial commit'); A('main', 'WIP: add login'); A('main', 'fix typo'); A('main', 'oops, fix again'); break;
+    case 'clean': initRepo(r); A('main', 'Initial commit'); A('main', 'Add build script'); r.working = ['debug.log', 'tmp/', 'notes.txt']; break;
     case 'revert': initRepo(r); A('main', 'Initial commit'); A('main', 'Add signup page'); A('main', 'Change pricing logic'); break;
     case 'stash': initRepo(r); A('main', 'Initial commit'); A('main', 'Add dashboard'); r.working = ['hotfix.js']; break;
     case 'log':
@@ -149,7 +151,7 @@ function L(k, t) { return { k: k, t: t }; }
 function err(t) { return { ok: false, lines: [L('err', t)] }; }
 function ok(lines) { return { ok: true, lines: lines.map(function (t) { return typeof t === 'string' ? L('out', t) : t; }) }; }
 
-var HELP = ['init', 'add', 'commit -m "…"', 'status', 'log', 'branch', 'checkout / switch', 'merge', 'rebase', 'cherry-pick', 'reset', 'revert', 'stash / stash pop', 'tag', 'remote add', 'push', 'pull', 'fetch', 'clone'];
+var HELP = ['init', 'add', 'commit -m "…"', 'commit --amend', 'status', 'log', 'branch', 'checkout / switch', 'merge', 'rebase', 'rebase -i HEAD~n', 'cherry-pick', 'reset', 'reflog', 'clean -f', 'revert', 'stash / stash pop', 'tag', 'remote add', 'push', 'pull', 'fetch', 'clone'];
 
 function exec(r, line) {
   var raw = (line || '').trim();
@@ -205,6 +207,18 @@ function exec(r, line) {
 
     case 'commit': {
       if (!r.head.branch) return err('You are in detached HEAD — check out a branch before committing here.');
+      if (t.indexOf('--amend') > -1) {
+        if (!tipId) return err('Nothing to amend — there is no commit yet.');
+        var old = get(r, tipId);
+        var ami = t.indexOf('-m');
+        var amsg = ami > -1 && t[ami + 1] ? t[ami + 1] : old.msg;
+        var included = r.staged.length;
+        var replacement = mkCommit(r, amsg, old.parents, old.lane);
+        r.branches[b] = replacement.id;
+        r.staged = [];
+        return ok([L('ok', '[' + b + ' ' + replacement.id + '] ' + amsg),
+          'Replaced ' + old.id + ' with a new commit' + (included ? ' (' + included + ' newly staged file(s) folded in)' : '') + ' — the old commit is now unreachable.']);
+      }
       if (!r.staged.length) return err("Nothing staged. Stage changes first with 'git add .'");
       var mi = t.indexOf('-m');
       var msg = mi > -1 && t[mi + 1] ? t[mi + 1] : 'Update ' + r.staged[0];
@@ -271,6 +285,26 @@ function exec(r, line) {
     }
 
     case 'rebase': {
+      var iIdx = t.indexOf('-i');
+      if (iIdx > -1) {
+        if (!r.head.branch) return err('Check out a branch before rebasing.');
+        var rangeArg = t[iIdx + 1];
+        var rm = rangeArg && rangeArg.match(/^HEAD~(\d+)$/);
+        if (!rm) return err('usage: git rebase -i HEAD~<n>  (squashes the last <n> commits into one)');
+        var count = parseInt(rm[1], 10);
+        if (count < 2) return err('Pick at least 2 commits to squash — try HEAD~2 or more.');
+        if (!tipId) return err('Nothing to rebase — there is no commit yet.');
+        var chain = [];
+        var cur2 = tipId;
+        for (var qi = 0; qi < count && cur2; qi++) { var cc2 = get(r, cur2); if (!cc2) break; chain.unshift(cc2); cur2 = cc2.parents[0]; }
+        if (chain.length < count) return err('Only ' + chain.length + ' commit(s) of history available — pick a smaller number.');
+        var base2 = cur2;
+        var combinedMsg = chain.map(function (c) { return c.msg; }).join(' + ');
+        var squashed = mkCommit(r, combinedMsg, base2 ? [base2] : [], r.lanes[b]);
+        r.branches[b] = squashed.id;
+        return ok([L('ok', 'Successfully rebased and squashed ' + count + ' commits into ' + squashed.id + '.'),
+          chain.map(function (c) { return c.id; }).join(', ') + ' are now unreachable — combined into one commit.']);
+      }
       var rn = t[2];
       if (!rn) return err('usage: git rebase <branch>');
       var rt = r.branches[rn] !== undefined ? r.branches[rn] : r.remotes[rn];
@@ -414,6 +448,30 @@ function exec(r, line) {
       if (r.remotes[key2] === undefined) return err("The remote has no branch '" + b + "'.");
       var mr = exec(r, 'git merge ' + key2);
       return { ok: mr.ok, lines: out.concat(mr.lines) };
+    }
+
+    case 'reflog': {
+      if (!r.commits.length) return ok(['(no reflog yet — make a commit first)']);
+      var reachRl = reachable(r);
+      var entries = r.commits.slice().sort(function (a2, b2) { return b2.t - a2.t; }).slice(0, 10);
+      return ok(entries.map(function (c, i) {
+        return L(reachRl[c.id] ? 'out' : 'ok',
+          c.id + ' HEAD@{' + i + '}: ' + c.msg + (reachRl[c.id] ? '' : '   ← unreachable, recover with: git reset --hard ' + c.id));
+      }));
+    }
+
+    case 'clean': {
+      var cflags = t.slice(2);
+      var cdry = cflags.indexOf('-n') > -1 || cflags.indexOf('--dry-run') > -1;
+      var cforce = cflags.some(function (f) { return f[0] === '-' && f.indexOf('f') > -1; });
+      if (!r.working.length) return ok(['Nothing to clean — no untracked files.']);
+      if (cdry) return ok(r.working.map(function (f) { return 'Would remove ' + f; }));
+      if (!cforce) return err("clean won't run without -f (safety). Preview with 'git clean -n', then 'git clean -f'.");
+      var removed = r.working.slice();
+      r.working = [];
+      var clines = removed.map(function (f) { return L('ok', 'Removing ' + f); });
+      clines.push("Deleted " + removed.length + " untracked file(s) — gone for good (they were never in Git, so reflog can't help).");
+      return ok(clines);
     }
 
     default:

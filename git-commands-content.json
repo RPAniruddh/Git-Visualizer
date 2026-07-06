@@ -933,6 +933,107 @@
       }
     },
     {
+      "id": "commit-amend",
+      "title": "git commit --amend",
+      "category": "Saving work",
+      "shortExplanation": "Rewrite your last commit instead of making a new one.",
+      "syntax": [
+        "git commit --amend",
+        "git commit --amend -m \"corrected message\"",
+        "git commit --amend --no-edit"
+      ],
+      "hints": [
+        "Only rewrites the *last* commit — reach further back and you need rebase instead.",
+        "Never amend a commit you've already pushed and shared — like rebase, it changes the hash.",
+        "`--no-edit` keeps the same message and just folds in newly staged changes."
+      ],
+      "howItWorks": "git commit --amend builds a brand-new commit from the current index, using the same parent as the commit you're replacing (optionally with a new message), then moves the branch pointer to it. The original commit becomes unreachable — recoverable via reflog, but gone from normal history.",
+      "sandboxSeed": "commit",
+      "beforeGraph": {
+        "caption": "b2e is already committed, but login.js is staged and missing from it. main and HEAD still point at b2e.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "login.js"
+          ]
+        }
+      },
+      "afterGraph": {
+        "caption": "b2e is replaced by a brand-new commit with the same parent — login.js is folded in, and the old b2e becomes unreachable.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0,
+            "kind": "ghost"
+          },
+          {
+            "id": "d7e",
+            "col": 2,
+            "lane": 0,
+            "kind": "new"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "d7e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "d7e",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "d7e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": []
+        }
+      }
+    },
+    {
       "id": "push",
       "title": "git push",
       "category": "Saving work",
@@ -1273,6 +1374,111 @@
       }
     },
     {
+      "id": "branch",
+      "title": "git branch",
+      "category": "Branching",
+      "shortExplanation": "Create a new branch pointer — or list the ones you have.",
+      "syntax": [
+        "git branch",
+        "git branch feature/login",
+        "git branch -d old-feature"
+      ],
+      "hints": [
+        "A branch is just a lightweight pointer to a commit — creating one copies nothing.",
+        "Plain `git branch` only *creates* the branch; you stay put. Use `git switch` to move onto it.",
+        "`-d` safely deletes a merged branch; `-D` force-deletes an unmerged one."
+      ],
+      "howItWorks": "git branch <name> writes a new ref under refs/heads/ pointing at the current commit. No commits are created or copied, and HEAD doesn't move — you stay on your current branch until you switch. With no argument it lists branches; with -d it removes a branch ref.",
+      "sandboxSeed": "branch",
+      "beforeGraph": {
+        "caption": "You're on main at c9d, with no other branches yet.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "git branch feature adds a pointer at c9d — no new commit, and HEAD stays on main.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "feature",
+            "at": "c9d",
+            "kind": "branch",
+            "lane": 1,
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      }
+    },
+    {
       "id": "checkout-branch",
       "title": "git checkout -b",
       "category": "Branching",
@@ -1463,6 +1669,118 @@
           ],
           "f1a": [
             "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "feature",
+            "at": "f1a",
+            "kind": "branch",
+            "lane": 1
+          },
+          {
+            "name": "HEAD",
+            "at": "f1a",
+            "kind": "head",
+            "lane": 1,
+            "new": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "switch",
+      "title": "git switch",
+      "category": "Branching",
+      "shortExplanation": "Move onto another branch — the modern, safer checkout.",
+      "syntax": [
+        "git switch feature/login",
+        "git switch -c new-idea",
+        "git switch main"
+      ],
+      "hints": [
+        "`git switch` only changes branches — unlike `checkout` it can't silently touch files, which makes it safer.",
+        "`-c` creates a branch and switches to it in one step (like `checkout -b`).",
+        "Your working directory updates to match whatever branch you land on."
+      ],
+      "howItWorks": "git switch moves HEAD to the target branch and updates your working directory to match that branch's latest commit. It was introduced to split checkout's overloaded job in two — switch handles branches, restore handles files — so each command does one clear thing.",
+      "sandboxSeed": "checkout",
+      "beforeGraph": {
+        "caption": "You're on main at b2e. feature has moved ahead to f1a.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 2,
+            "lane": 1
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          },
+          {
+            "name": "feature",
+            "at": "f1a",
+            "kind": "branch",
+            "lane": 1
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "git switch feature moves HEAD onto feature — your working tree now matches f1a.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 2,
+            "lane": 1
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "b2e"
           ]
         },
         "refs": [
@@ -1785,6 +2103,133 @@
             "at": "f2p",
             "kind": "head",
             "lane": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "rebase-squash",
+      "title": "git rebase -i (squash)",
+      "category": "Rebase",
+      "shortExplanation": "Combine several messy commits into one clean commit.",
+      "syntax": [
+        "git rebase -i HEAD~3",
+        "# in the editor: change 'pick' to 'squash' (or 's') on the commits to fold in",
+        "git rebase --continue"
+      ],
+      "hints": [
+        "The editor lists your last N commits, oldest first — mark ones to *squash* into the one above them.",
+        "Great for cleaning up 'WIP' / 'fix typo' commits before opening a pull request.",
+        "Like any rebase, this rewrites hashes — don't do it on commits you've already pushed and shared."
+      ],
+      "howItWorks": "git rebase -i HEAD~N opens an interactive list of your last N commits. Marking a commit 'squash' folds its changes and message into the commit before it. Once you confirm, git replays the remaining commits as new ones — combining the squashed group into a single new commit with a new hash.",
+      "sandboxSeed": "squash",
+      "beforeGraph": {
+        "caption": "Three messy commits sit on top of a1c — perfect candidates to squash into one.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          },
+          {
+            "id": "e3f",
+            "col": 3,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ],
+          "e3f": [
+            "c9d"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "e3f",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "e3f",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "b2e, c9d, and e3f are combined into one new commit on top of a1c — the originals are now unreachable.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0,
+            "kind": "ghost"
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0,
+            "kind": "ghost"
+          },
+          {
+            "id": "e3f",
+            "col": 3,
+            "lane": 0,
+            "kind": "ghost"
+          },
+          {
+            "id": "f6a",
+            "col": 4,
+            "lane": 0,
+            "kind": "new"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ],
+          "e3f": [
+            "c9d"
+          ],
+          "f6a": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "f6a",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "f6a",
+            "kind": "head"
           }
         ]
       }
@@ -2276,6 +2721,214 @@
         "areas": {
           "working": [],
           "staged": []
+        }
+      }
+    },
+    {
+      "id": "reflog",
+      "title": "git reflog",
+      "category": "Undo",
+      "shortExplanation": "See everywhere HEAD has been — your safety net for lost commits.",
+      "syntax": [
+        "git reflog",
+        "git reset --hard HEAD~1",
+        "git reflog"
+      ],
+      "hints": [
+        "Even a `reset --hard` doesn't truly delete commits — reflog still lists them so you can jump back.",
+        "Each line is a past position of HEAD; copy a hash and `git reset --hard <hash>` to recover it.",
+        "The reflog is local and expires after ~90 days — a personal undo history, not something you share."
+      ],
+      "howItWorks": "git reflog prints the log of every position HEAD has held — each commit, checkout, reset, and merge. Because those commits still live in the object database until garbage collection, the reflog lets you recover work that looks lost, most often after an accidental reset --hard or a bad rebase.",
+      "sandboxSeed": "reset",
+      "beforeGraph": {
+        "caption": "You ran reset --hard and dropped d4f — main moved back to c9d and d4f looks gone.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          },
+          {
+            "id": "d4f",
+            "col": 3,
+            "lane": 0,
+            "kind": "ghost"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ],
+          "d4f": [
+            "c9d"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "git reflog still lists d4f — run git reset --hard d4f and it comes right back.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          },
+          {
+            "id": "d4f",
+            "col": 3,
+            "lane": 0,
+            "kind": "focus"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ],
+          "d4f": [
+            "c9d"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      }
+    },
+    {
+      "id": "clean",
+      "title": "git clean",
+      "category": "Undo",
+      "shortExplanation": "Delete untracked files from your working tree.",
+      "syntax": [
+        "git clean -n",
+        "git clean -f",
+        "git clean -fd"
+      ],
+      "hints": [
+        "Destructive and NOT covered by reflog — deleted untracked files are gone for good.",
+        "Always dry-run with `-n` first to see exactly what would be removed.",
+        "Git refuses to run without `-f` on purpose; add `-d` to also remove untracked directories."
+      ],
+      "howItWorks": "git clean removes files in the working tree that Git isn't tracking — build output, logs, scratch files. It only touches untracked files (your tracked changes are safe), requires -f to actually run as a safeguard, and unlike most undo commands there's no recovery: these files were never in Git, so reflog can't bring them back.",
+      "sandboxSeed": "clean",
+      "beforeGraph": {
+        "caption": "Two commits are safe in history, but three untracked files are cluttering the working tree.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "working": [
+            "debug.log",
+            "tmp/",
+            "notes.txt"
+          ]
+        }
+      },
+      "afterGraph": {
+        "caption": "git clean -f wipes the untracked files; the committed history is completely untouched.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "working": []
         }
       }
     },
