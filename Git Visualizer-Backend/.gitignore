@@ -1,6 +1,7 @@
 target/
 !.mvn/wrapper/maven-wrapper.properties
 .idea/
+.metadata/
 *.iml
 .vscode/
 *.log
