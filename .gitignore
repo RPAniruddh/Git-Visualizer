@@ -1,2 +1,8 @@
 .claude
 _legacy-frontend
+
+# Internal reference docs — useful locally, not meant for the public repo
+prompt.md
+ARCHITECTURE.md
+DEPLOYMENT.md
+Git Visualizer-Backend/PROGRESS.md
