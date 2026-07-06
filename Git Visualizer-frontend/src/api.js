@@ -3,7 +3,11 @@
 //   GET /api/v1/commands/{id}   → full command (syntax, hints, graphs, sandboxSeed)
 //   GET /api/v1/workflows       → [{id,title,description}]
 //   GET /api/v1/workflows/{id}  → {id,title,description,steps,note}
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+// Strip any trailing slash(es) — a env var set with one (e.g. "https://host.com/")
+// would otherwise produce a double slash when concatenated with a leading-slash
+// path below, which Spring's routing doesn't treat as equivalent to the single-slash
+// route and silently misses the CORS configuration entirely.
+const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:8080').replace(/\/+$/, '');
 
 async function getJson(path) {
   const res = await fetch(API_BASE + path);
