@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Route, Routes, useParams } from 'react-router-dom';
 import { loadContent } from './api.js';
 import Landing from './components/Landing.jsx';
 import Workspace from './components/Workspace.jsx';
 import ErrorScreen from './components/ErrorScreen.jsx';
 import ResetModal from './components/ResetModal.jsx';
+import NotFound from './components/NotFound.jsx';
 
 function readLearned() {
   try { return JSON.parse(localStorage.getItem('gv-learned-v2') || '{}'); } catch { return {}; }
@@ -69,7 +70,7 @@ export default function App() {
         <Route path="/" element={<Landing {...shared} />} />
         <Route path="/commands/:id" element={<CommandRoute shared={shared} />} />
         <Route path="/free" element={<Workspace {...shared} commandId="free" />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound dark={dark} toggleTheme={toggleTheme} />} />
       </Routes>
     </div>
   );
@@ -78,6 +79,6 @@ export default function App() {
 function CommandRoute({ shared }) {
   const { id } = useParams();
   const exists = shared.content.commands.some((c) => c.id === id);
-  if (!exists) return <Navigate to="/" replace />;
+  if (!exists) return <NotFound dark={shared.dark} toggleTheme={shared.toggleTheme} />;
   return <Workspace {...shared} commandId={id} key={id} />;
 }
