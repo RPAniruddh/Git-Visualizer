@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vite/
+*.log
+.DS_Store
+
+# Local environment overrides — never commit real values
+.env
+.env.*

@@ -6,3 +6,9 @@ target/
 *.log
 .DS_Store
 dependency-check-report.*
+
+# Local secrets / environment overrides — never commit real credentials
+.env
+.env.*
+application-local.yml
+application-local.yaml
