@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: git-visualizer-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gitviz}
+    username: ${DB_USERNAME:gitviz}
+    password: ${DB_PASSWORD:gitviz}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  # Platforms like Render/Fly/Railway assign a dynamic port via $PORT — fall
+  # back to 8080 for local/Docker Compose where nothing sets it.
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    redis:
+      # Local dev usually has no Redis (ratelimit backend defaults to 'local');
+      # the docker profile turns this back on.
+      enabled: false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+  admin:
+    api-key: ${ADMIN_API_KEY:}
+  content:
+    seed-file: ${CONTENT_SEED_FILE:classpath:git-commands-content.json}
+  ratelimit:
+    enabled: ${RATELIMIT_ENABLED:true}
+    backend: ${RATELIMIT_BACKEND:local}
+    capacity: ${RATELIMIT_CAPACITY:120}
+    refill-tokens: ${RATELIMIT_REFILL_TOKENS:120}
+    refill-period-seconds: ${RATELIMIT_REFILL_PERIOD_SECONDS:60}

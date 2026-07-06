@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Git Visualizer — an interactive git playground</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Apply the saved theme before first paint to avoid a light flash
+      try {
+        if (localStorage.getItem('gv-theme') === 'dark') {
+          document.documentElement.classList.add('gv-dark');
+        }
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-CoIdIZkC.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-D2UeA-H1.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

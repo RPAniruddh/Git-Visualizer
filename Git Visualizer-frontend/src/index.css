@@ -1,0 +1,62 @@
+:root {
+  --gv-bg: #F5F6F8; --gv-bg2: #FBFBFC; --gv-card: #fff; --gv-ink: #171B26; --gv-on-ink: #fff;
+  --gv-text2: #565F72; --gv-muted: #9AA3B5; --gv-border: #E3E6EC; --gv-border2: #EEF1F6;
+  --gv-active: #EEF2FA; --gv-dash: #C9D4E8; --gv-dim: #C2CADB; --gv-area: #FAFBFD;
+  --gv-seg: #EAEEF5; --gv-term: #171B26; --gv-accent: #2F6BD8;
+}
+html.gv-dark {
+  --gv-bg: #11141B; --gv-bg2: #151923; --gv-card: #1C212C; --gv-ink: #E8EBF2; --gv-on-ink: #12151D;
+  --gv-text2: #A9B1C2; --gv-muted: #737D92; --gv-border: #2A303D; --gv-border2: #232936;
+  --gv-active: #232B3B; --gv-dash: #3A4356; --gv-dim: #4A5468; --gv-area: #181D27;
+  --gv-seg: #232936; --gv-term: #0C0F15;
+}
+
+body {
+  margin: 0;
+  background: var(--gv-bg);
+  color: var(--gv-ink);
+  font-family: 'Instrument Sans', sans-serif;
+}
+
+@keyframes gvPop { 0% { transform: scale(.55); opacity: 0 } 70% { transform: scale(1.05); opacity: 1 } 100% { transform: scale(1); opacity: 1 } }
+@keyframes gvDraw { from { stroke-dashoffset: 1 } to { stroke-dashoffset: 0 } }
+@keyframes gvFade { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes gvWordSwap { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: translateY(0) } }
+
+::-webkit-scrollbar { width: 8px; height: 8px }
+::-webkit-scrollbar-thumb { background: var(--gv-dash); border-radius: 4px }
+::-webkit-scrollbar-track { background: transparent }
+
+/* hover utilities (the old dc runtime had style-hover; React uses classes) */
+.hv-border:hover { border-color: var(--gv-dash) !important }
+.hv-ink:hover { color: var(--gv-ink) !important }
+.hv-text2:hover { color: var(--gv-text2) !important }
+.hv-accent:hover { border-color: var(--gv-accent) !important }
+.hv-opacity:hover { opacity: .85 }
+.hv-bright:hover { filter: brightness(1.08) }
+.hv-red:hover { color: #C13049 !important; border-color: #E5C4CB !important }
+.hv-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(23, 27, 38, .08) }
+
+/* Responsive layout */
+.gv-topbar { display: none }
+.gv-backdrop { display: none }
+@media (max-width: 1024px) {
+  .gv-topbar { display: flex !important; align-items: center; gap: 12px; flex: 1 1 100%; padding: 11px 16px; border-bottom: 1px solid var(--gv-border); background: var(--gv-bg2); position: sticky; top: 0; z-index: 30 }
+  /* Sidebar becomes an off-canvas drawer */
+  .gv-sidebar { position: fixed !important; top: 0; left: 0; bottom: 0; width: 274px !important; flex: none !important; z-index: 60; transform: translateX(-105%); transition: transform .25s ease; box-shadow: 0 0 44px rgba(23, 27, 38, .22); border-right: 1px solid var(--gv-border) !important; overflow-y: auto; padding: 20px 0 16px !important }
+  .gv-sidebar.gv-open { transform: translateX(0) }
+  .gv-backdrop { display: block; position: fixed; inset: 0; background: rgba(23, 27, 38, .35); z-index: 50 }
+  .gv-main { flex: 1 1 100% !important; padding: 20px 16px !important }
+  .gv-right { flex: 1 1 100% !important; max-width: none !important; min-width: 0 !important; padding: 0 16px 28px !important }
+  /* topbar already has a theme button at this size — don't show a second one */
+  .gv-theme-row { display: none !important }
+}
+@media (max-width: 640px) {
+  .gv-landing { padding: 20px 16px 44px !important }
+  .gv-landing-header { flex-wrap: wrap !important; row-gap: 10px !important }
+  .gv-hero { margin: 34px 0 30px !important }
+  .gv-hero-title { font-size: 31px !important }
+  .gv-freeplay { flex-wrap: wrap !important; gap: 14px !important; padding: 20px 18px !important }
+  .gv-cmd-title { font-size: 23px !important }
+  .gv-footer { padding: 16px !important }
+}

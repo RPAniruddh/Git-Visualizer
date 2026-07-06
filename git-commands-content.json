@@ -1,0 +1,2745 @@
+{
+  "_notes": [
+    "This file is the authoritative content contract for Git Visualizer.",
+    "beforeGraph/afterGraph are now DESIGNED per-command from each command's howItWorks field.",
+    "Graph schema: { caption, empty?, emptyMsg?, nodes:[{id,col,lane,kind?}], parents:{childId:[parentId...]}, refs:[{name,at,kind,lane?,new?}], areas?:{<column>:[files...]} }.",
+    "  node.kind: normal(default) | new (highlighted, animates in) | ghost (unreachable, faded) | merge | focus (spotlighted) | unborn (dashed empty ring, no commit yet).",
+    "  ref.kind: branch | head | remote | tag | remote-url (floating URL badge). ref.new highlights a moved/created ref. ref.lane sets its color lane.",
+    "  areas keys render as labelled trays: working, staged, stash, tracked, untracked. A file string prefixed with '-' renders as a deletion.",
+    "GET /api/v1/commands returns [{id,title,category,shortExplanation}]. GET /api/v1/commands/{id} returns the full object. contentService is the swap point.",
+    "Lane 0 = the current branch (accent). Lane 1+ = other branches / remote-tracking lines."
+  ],
+  "categories": [
+    "Setup",
+    "Checking state",
+    "Saving work",
+    "Branching",
+    "Rebase",
+    "Stash",
+    "Undo",
+    "Advanced"
+  ],
+  "commands": [
+    {
+      "id": "init",
+      "title": "git init",
+      "category": "Setup",
+      "shortExplanation": "Turn a folder into a git repo.",
+      "syntax": [
+        "git init"
+      ],
+      "hints": [
+        "This is the very first command you run in a new project.",
+        "It doesn't touch your files at all — it just creates a hidden folder.",
+        "Look for a new `.git/` directory after running it — that's where git stores everything."
+      ],
+      "howItWorks": "git init creates a hidden .git directory in the current folder. This directory holds git's entire object database, refs, and config — nothing outside .git is touched. There are no commits yet; HEAD points to an unborn branch (usually main) until your first commit.",
+      "sandboxSeed": "init",
+      "beforeGraph": {
+        "caption": "An ordinary folder. Git isn't watching anything yet.",
+        "empty": true,
+        "emptyMsg": "no repository"
+      },
+      "afterGraph": {
+        "caption": "A .git folder exists and HEAD points at main — but there are no commits yet.",
+        "nodes": [
+          {
+            "id": "unborn",
+            "col": 0,
+            "lane": 0,
+            "kind": "unborn"
+          }
+        ],
+        "parents": {},
+        "refs": [
+          {
+            "name": "HEAD → main",
+            "at": "unborn",
+            "kind": "head",
+            "new": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "clone",
+      "title": "git clone",
+      "category": "Setup",
+      "shortExplanation": "Download a remote repo and its full history.",
+      "syntax": [
+        "git clone https://github.com/RPAniruddh/MedSync.git"
+      ],
+      "hints": [
+        "This is how you start working on a project that already exists somewhere else.",
+        "You get every commit, branch, and tag — not just the latest snapshot.",
+        "A remote called 'origin' is automatically set up pointing back to the source."
+      ],
+      "howItWorks": "git clone copies the entire .git object database from the remote, checks out the default branch's latest commit into your working directory, and creates a remote-tracking reference (origin/main, etc.) plus a local branch that tracks it.",
+      "sandboxSeed": "clone",
+      "beforeGraph": {
+        "caption": "Before: you have only a URL — nothing is downloaded.",
+        "empty": true,
+        "emptyMsg": "empty folder"
+      },
+      "afterGraph": {
+        "caption": "The whole history arrives at once; origin/main tracks the remote and main tracks origin/main.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0,
+            "kind": "new"
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0,
+            "kind": "new"
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0,
+            "kind": "new"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "origin/main",
+            "at": "c9d",
+            "kind": "remote",
+            "new": true
+          },
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      }
+    },
+    {
+      "id": "branch-rename-main",
+      "title": "git branch -M main",
+      "category": "Setup",
+      "shortExplanation": "Rename the current branch — do this once before your first commit.",
+      "syntax": [
+        "git branch -M main"
+      ],
+      "hints": [
+        "The -M is a force-rename — it works even if a branch named 'main' already exists.",
+        "This only renames a label/pointer — no commits are created or changed.",
+        "Commonly used right after git init to standardize the default branch name."
+      ],
+      "howItWorks": "Branches in git are just movable pointers to a commit. -M renames the current branch pointer's label without touching any commit history or the commits it points to.",
+      "sandboxSeed": "commit",
+      "beforeGraph": {
+        "caption": "The current branch happens to be called master.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "master",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "Only the label changed. Same commits, same hashes — nothing in history moved.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ]
+      }
+    },
+    {
+      "id": "remote-add",
+      "title": "git remote add",
+      "category": "Setup",
+      "shortExplanation": "Link your local repo to a GitHub remote.",
+      "syntax": [
+        "git remote add origin https://github.com/RPAniruddh/MedSync.git",
+        "git remote -v"
+      ],
+      "hints": [
+        "'origin' is just a conventional name — you could call it anything.",
+        "This command doesn't transfer any data — it just records a URL.",
+        "Use `git remote -v` afterward to confirm the link was created correctly."
+      ],
+      "howItWorks": "This adds an entry to .git/config mapping the name 'origin' to a URL. No network call happens until you push, pull, or fetch — it's purely bookkeeping.",
+      "sandboxSeed": "remote",
+      "beforeGraph": {
+        "caption": "Local commits exist, but git has no idea where 'origin' is.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "'origin' now maps to a URL in .git/config. No commits moved — pure bookkeeping until you push.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          },
+          {
+            "name": "origin ⇢ github.com/RPAniruddh/MedSync",
+            "kind": "remote-url",
+            "new": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "status",
+      "title": "git status",
+      "category": "Checking state",
+      "shortExplanation": "Show what's untracked, staged, and modified.",
+      "syntax": [
+        "git status"
+      ],
+      "hints": [
+        "This is a read-only command — it never changes anything.",
+        "Run this constantly; it's the most common git command by far.",
+        "Files show up in three buckets: untracked, modified (unstaged), and staged."
+      ],
+      "howItWorks": "git status compares three trees: the working directory, the staging area (index), and the last commit (HEAD). Differences between working dir and index show as 'not staged'; differences between index and HEAD show as 'staged for commit'.",
+      "sandboxSeed": "commit",
+      "beforeGraph": {
+        "caption": "Read-only. It inspects three trees: working dir, index, and HEAD.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "PatientController.java"
+          ],
+          "working": [
+            "application-local.yml"
+          ]
+        }
+      },
+      "afterGraph": {
+        "caption": "Nothing changed — status only reports the differences it found. The graph is identical.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "PatientController.java"
+          ],
+          "working": [
+            "application-local.yml"
+          ]
+        }
+      }
+    },
+    {
+      "id": "log",
+      "title": "git log",
+      "category": "Checking state",
+      "shortExplanation": "View commit history.",
+      "syntax": [
+        "git log --oneline",
+        "git log --oneline --graph --all",
+        "git log --author=\"Aniruddh\"",
+        "git log --since=\"2 days ago\"",
+        "git log -p"
+      ],
+      "hints": [
+        "--oneline compresses each commit to a single line — great for a quick overview.",
+        "--graph --all is the closest thing to this app's visualization, but in text form.",
+        "-p shows the actual code diff introduced by each commit, not just the message."
+      ],
+      "howItWorks": "git log walks the commit graph backward from HEAD (or the given refs), following parent pointers. --graph draws ASCII lines showing branch/merge topology; --all includes every ref, not just the current branch.",
+      "sandboxSeed": "log",
+      "beforeGraph": {
+        "caption": "This is exactly the graph git log --graph --all walks — parent by parent, newest first.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1
+          },
+          {
+            "id": "f2b",
+            "col": 2,
+            "lane": 1
+          },
+          {
+            "id": "m3c",
+            "col": 3,
+            "lane": 0,
+            "kind": "merge"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "a1c"
+          ],
+          "f2b": [
+            "f1a"
+          ],
+          "m3c": [
+            "b2e",
+            "f2b"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "m3c",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "m3c",
+            "kind": "head"
+          },
+          {
+            "name": "feature",
+            "at": "f2b",
+            "kind": "branch",
+            "lane": 1
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "Read-only: log prints history, it never changes it. The merge shows as one line with two ancestries.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1
+          },
+          {
+            "id": "f2b",
+            "col": 2,
+            "lane": 1
+          },
+          {
+            "id": "m3c",
+            "col": 3,
+            "lane": 0,
+            "kind": "merge"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "a1c"
+          ],
+          "f2b": [
+            "f1a"
+          ],
+          "m3c": [
+            "b2e",
+            "f2b"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "m3c",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "m3c",
+            "kind": "head"
+          },
+          {
+            "name": "feature",
+            "at": "f2b",
+            "kind": "branch",
+            "lane": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "diff",
+      "title": "git diff",
+      "category": "Checking state",
+      "shortExplanation": "See what changed.",
+      "syntax": [
+        "git diff",
+        "git diff --staged",
+        "git diff main feature/xyz"
+      ],
+      "hints": [
+        "Plain `git diff` only shows changes NOT yet staged — staged changes are invisible to it.",
+        "Use --staged to see exactly what will go into your next commit.",
+        "You can diff any two refs, not just the working directory — e.g. two branches or two commits."
+      ],
+      "howItWorks": "git diff compares two snapshots of your file tree. With no args: working directory vs the index. With --staged: index vs HEAD. With two refs: it compares the trees of those two commits directly.",
+      "sandboxSeed": "add",
+      "beforeGraph": {
+        "caption": "Plain diff compares the working tree against the index — staged changes are invisible to it.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "pom.xml"
+          ],
+          "working": [
+            "PatientService.java"
+          ]
+        }
+      },
+      "afterGraph": {
+        "caption": "Read-only — diff computes and prints the comparison, changing nothing. --staged compares index vs HEAD instead.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "pom.xml"
+          ],
+          "working": [
+            "PatientService.java"
+          ]
+        }
+      }
+    },
+    {
+      "id": "show",
+      "title": "git show",
+      "category": "Checking state",
+      "shortExplanation": "See exactly what one commit changed.",
+      "syntax": [
+        "git show f772719"
+      ],
+      "hints": [
+        "You only need enough of the hash's first characters to be unique — not the full 40.",
+        "This is like `git diff`, but scoped to a single commit against its parent.",
+        "Also works on tags, branches, and other objects, not just commit hashes."
+      ],
+      "howItWorks": "git show f772719 looks up the commit object by hash, then computes and displays the diff between that commit and its parent (or shows the object contents directly for non-commit objects).",
+      "sandboxSeed": "log0",
+      "beforeGraph": {
+        "caption": "You ask about one commit by hash — here, b2e.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "show spotlights that commit and diffs it against its parent (b2e vs a1c). Nothing in the graph changes.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0,
+            "kind": "focus"
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      }
+    },
+    {
+      "id": "add",
+      "title": "git add",
+      "category": "Saving work",
+      "shortExplanation": "Stage files for the next commit.",
+      "syntax": [
+        "git add .",
+        "git add pom.xml",
+        "git add src/"
+      ],
+      "hints": [
+        "Staging is a separate step from saving — nothing is permanent until you commit.",
+        "You can stage some changes in a file and leave the rest unstaged (with `git add -p`).",
+        "`git add .` stages everything new/modified/deleted from the current directory down."
+      ],
+      "howItWorks": "git add copies the current content of the specified file(s) into the index (staging area), computing a blob object for each file's content. The working directory and repo history are untouched — only the index changes.",
+      "sandboxSeed": "add",
+      "beforeGraph": {
+        "caption": "Edited files sit in the working tree. The index (staging area) is empty.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "working": [
+            "PatientEntity.java",
+            "pom.xml"
+          ],
+          "staged": []
+        }
+      },
+      "afterGraph": {
+        "caption": "The files' current content is copied into the index. No commit yet — history is untouched.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "working": [],
+          "staged": [
+            "PatientEntity.java",
+            "pom.xml"
+          ]
+        }
+      }
+    },
+    {
+      "id": "commit",
+      "title": "git commit",
+      "category": "Saving work",
+      "shortExplanation": "Save a permanent snapshot of staged changes.",
+      "syntax": [
+        "git commit -m \"Phase 1: Eureka, Gateway (WebFlux), and three services with H2 wired up\""
+      ],
+      "hints": [
+        "Only staged changes are included — anything not `git add`ed is left out.",
+        "Write what the code now *does*, not a diary of what you changed.",
+        "This creates a new node in the commit graph, and moves the current branch pointer to it."
+      ],
+      "howItWorks": "git commit takes a snapshot of the index, creates a tree object representing that snapshot, and wraps it in a commit object pointing to that tree and to the previous commit (its parent). The current branch ref is then moved to point at this new commit.",
+      "sandboxSeed": "commit",
+      "beforeGraph": {
+        "caption": "One file is staged, ready to be sealed. main points at the last commit.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "PatientController.java"
+          ]
+        }
+      },
+      "afterGraph": {
+        "caption": "A new commit node captures the staged snapshot; its parent is b2e, and main (with HEAD) moves onto it.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0,
+            "kind": "new"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": []
+        }
+      }
+    },
+    {
+      "id": "push",
+      "title": "git push",
+      "category": "Saving work",
+      "shortExplanation": "Send commits to GitHub.",
+      "syntax": [
+        "git push -u origin main",
+        "git push",
+        "git push origin feature/xyz"
+      ],
+      "hints": [
+        "-u sets the 'upstream' link so future pushes on this branch need no arguments.",
+        "A normal push is rejected if the remote has commits you don't have locally yet.",
+        "You can push any local branch to the remote by naming it explicitly."
+      ],
+      "howItWorks": "git push uploads any commits reachable from your local branch that the remote doesn't already have, then attempts to move the remote's branch pointer to match yours. It's rejected (non-fast-forward) if that would discard commits on the remote.",
+      "sandboxSeed": "push",
+      "beforeGraph": {
+        "caption": "Your local main is two commits ahead of origin/main — those commits live only on your machine.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "origin/main",
+            "at": "a1c",
+            "kind": "remote"
+          },
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "The missing commits are uploaded and origin/main fast-forwards to match your main. Now they're in sync.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "origin/main",
+            "at": "c9d",
+            "kind": "remote",
+            "new": true
+          },
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pull",
+      "title": "git pull",
+      "category": "Saving work",
+      "shortExplanation": "Fetch remote changes and merge into your current branch.",
+      "syntax": [
+        "git pull"
+      ],
+      "hints": [
+        "This is really two steps combined: fetch, then merge.",
+        "If your local and remote history have diverged, this can create a merge commit.",
+        "Consider `git fetch` first if you want to inspect changes before merging them in."
+      ],
+      "howItWorks": "git pull runs git fetch to download new commits from the remote-tracking branch, then runs git merge (or rebase, if configured) to integrate those commits into your current branch.",
+      "sandboxSeed": "pull",
+      "beforeGraph": {
+        "caption": "Both sides moved since a1c: you committed b2e locally, and origin/main gained r5f.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "r5f",
+            "col": 1,
+            "lane": 1
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "r5f": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          },
+          {
+            "name": "origin/main",
+            "at": "r5f",
+            "kind": "remote",
+            "lane": 1
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "fetch + merge: a new merge commit with two parents joins your work and the remote's, and main moves onto it.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "r5f",
+            "col": 1,
+            "lane": 1
+          },
+          {
+            "id": "m7d",
+            "col": 2,
+            "lane": 0,
+            "kind": "merge"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "r5f": [
+            "a1c"
+          ],
+          "m7d": [
+            "b2e",
+            "r5f"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "m7d",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "m7d",
+            "kind": "head"
+          },
+          {
+            "name": "origin/main",
+            "at": "r5f",
+            "kind": "remote",
+            "lane": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "fetch",
+      "title": "git fetch",
+      "category": "Saving work",
+      "shortExplanation": "Download remote changes without applying them — inspect before merging.",
+      "syntax": [
+        "git fetch origin",
+        "git diff main origin/main",
+        "git pull"
+      ],
+      "hints": [
+        "This never touches your working directory or current branch — it's completely safe to run anytime.",
+        "It updates your local copy of the remote's branches (e.g. origin/main) without moving your own branch.",
+        "Compare `origin/main` against your `main` afterward to see exactly what's new before merging."
+      ],
+      "howItWorks": "git fetch downloads new commit objects and updates remote-tracking refs (like origin/main) to match the remote. Your local branches and working directory are left completely untouched until you explicitly merge or rebase.",
+      "sandboxSeed": "fetch",
+      "beforeGraph": {
+        "caption": "Your origin/main is stale — the remote has commits you haven't downloaded yet.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          },
+          {
+            "name": "origin/main",
+            "at": "b2e",
+            "kind": "remote"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "New commits are downloaded and origin/main advances — but your main doesn't move an inch. Merge on your terms.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "r1x",
+            "col": 2,
+            "lane": 1,
+            "kind": "new"
+          },
+          {
+            "id": "r2y",
+            "col": 3,
+            "lane": 1,
+            "kind": "new"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "r1x": [
+            "b2e"
+          ],
+          "r2y": [
+            "r1x"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          },
+          {
+            "name": "origin/main",
+            "at": "r2y",
+            "kind": "remote",
+            "lane": 1,
+            "new": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "checkout-branch",
+      "title": "git checkout -b",
+      "category": "Branching",
+      "shortExplanation": "Create a new branch and switch to it.",
+      "syntax": [
+        "git checkout -b feature/patient-entity"
+      ],
+      "hints": [
+        "This is shorthand for two commands: create a branch, then switch to it.",
+        "The new branch starts out pointing at the exact same commit as your current branch.",
+        "Nothing is duplicated — branches are lightweight pointers, not copies of files."
+      ],
+      "howItWorks": "git checkout -b creates a new ref pointing at the current commit, then updates HEAD to point at that new ref instead of the old branch. Your working directory doesn't change since both branches point at the same commit initially.",
+      "sandboxSeed": "log0",
+      "beforeGraph": {
+        "caption": "You're on main. There is no feature branch yet.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "A new pointer, feature, is created on the same commit — and HEAD moves to follow it. No files changed.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "feature/patient-entity",
+            "at": "c9d",
+            "kind": "branch",
+            "lane": 1,
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head",
+            "new": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "checkout",
+      "title": "git checkout",
+      "category": "Branching",
+      "shortExplanation": "Switch to an existing branch.",
+      "syntax": [
+        "git checkout main",
+        "git checkout feature/patient-entity"
+      ],
+      "hints": [
+        "Your working directory files change to match whatever that branch's last commit looks like.",
+        "You'll be blocked if you have uncommitted changes that would be overwritten — commit or stash first.",
+        "HEAD now points at the branch you switched to, not the one you came from."
+      ],
+      "howItWorks": "git checkout moves HEAD to point at the target branch ref, then updates every file in the working directory to match the tree of that branch's latest commit.",
+      "sandboxSeed": "checkout",
+      "beforeGraph": {
+        "caption": "main and feature diverged from a1c. HEAD is on main.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          },
+          {
+            "name": "feature",
+            "at": "f1a",
+            "kind": "branch",
+            "lane": 1
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "Only HEAD moves — onto feature. Your working directory is rewritten to match feature's snapshot.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "feature",
+            "at": "f1a",
+            "kind": "branch",
+            "lane": 1
+          },
+          {
+            "name": "HEAD",
+            "at": "f1a",
+            "kind": "head",
+            "lane": 1,
+            "new": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "merge",
+      "title": "git merge",
+      "category": "Branching",
+      "shortExplanation": "Bring another branch's changes in via a merge commit.",
+      "syntax": [
+        "git checkout main",
+        "git merge feature/patient-entity"
+      ],
+      "hints": [
+        "You merge INTO your current branch — check out the destination branch first.",
+        "If the branches touched the same lines, you'll get a conflict to resolve manually.",
+        "Unlike rebase, merge preserves the exact original commits and history shape — it just adds a new commit joining them."
+      ],
+      "howItWorks": "git merge creates a new commit with two parents: the tip of your current branch and the tip of the merged-in branch. Git computes a three-way diff (common ancestor vs. both tips) to combine the changes; conflicts occur where both sides changed the same lines.",
+      "sandboxSeed": "merge",
+      "beforeGraph": {
+        "caption": "main and feature both grew from a1c. You're on main, ready to merge feature in.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1
+          },
+          {
+            "id": "f2b",
+            "col": 2,
+            "lane": 1
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "a1c"
+          ],
+          "f2b": [
+            "f1a"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          },
+          {
+            "name": "feature",
+            "at": "f2b",
+            "kind": "branch",
+            "lane": 1
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "A merge commit with two parents (b2e and f2b) joins both lines; the original commits are all preserved.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1
+          },
+          {
+            "id": "f2b",
+            "col": 2,
+            "lane": 1
+          },
+          {
+            "id": "m4e",
+            "col": 3,
+            "lane": 0,
+            "kind": "merge"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "a1c"
+          ],
+          "f2b": [
+            "f1a"
+          ],
+          "m4e": [
+            "b2e",
+            "f2b"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "m4e",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "m4e",
+            "kind": "head"
+          },
+          {
+            "name": "feature",
+            "at": "f2b",
+            "kind": "branch",
+            "lane": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "rebase",
+      "title": "git rebase",
+      "category": "Rebase",
+      "shortExplanation": "Replay your commits on top of another branch for a clean linear history.",
+      "syntax": [
+        "git rebase main",
+        "git rebase --continue",
+        "git rebase --abort",
+        "git push --force-with-lease"
+      ],
+      "hints": [
+        "Rebase doesn't move commits — it creates brand new commits with the same changes, on a new base.",
+        "Never rebase a branch other people have already pulled — it rewrites history they're relying on.",
+        "After rebasing you'll need `--force-with-lease` to push, since your history no longer matches the remote's."
+      ],
+      "howItWorks": "git rebase finds the commits unique to your branch since it diverged from the target, then reapplies each one, in order, as a brand-new commit on top of the target branch's tip. Each replayed commit gets a new hash because its parent changed, which is why rewritten history breaks anyone who already has the old commits.",
+      "sandboxSeed": "rebase",
+      "beforeGraph": {
+        "caption": "feature branched at a1c; meanwhile main advanced to c9d. The histories have forked.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1
+          },
+          {
+            "id": "f2b",
+            "col": 2,
+            "lane": 1
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ],
+          "f1a": [
+            "a1c"
+          ],
+          "f2b": [
+            "f1a"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "feature",
+            "at": "f2b",
+            "kind": "branch",
+            "lane": 1
+          },
+          {
+            "name": "HEAD",
+            "at": "f2b",
+            "kind": "head",
+            "lane": 1
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "feature's commits are replayed as NEW commits (f1', f2') on top of c9d. The originals become unreachable — faded.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1,
+            "kind": "ghost"
+          },
+          {
+            "id": "f2b",
+            "col": 2,
+            "lane": 1,
+            "kind": "ghost"
+          },
+          {
+            "id": "f1p",
+            "col": 3,
+            "lane": 0,
+            "kind": "new"
+          },
+          {
+            "id": "f2p",
+            "col": 4,
+            "lane": 0,
+            "kind": "new"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ],
+          "f1a": [
+            "a1c"
+          ],
+          "f2b": [
+            "f1a"
+          ],
+          "f1p": [
+            "c9d"
+          ],
+          "f2p": [
+            "f1p"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "feature",
+            "at": "f2p",
+            "kind": "branch",
+            "lane": 1,
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "f2p",
+            "kind": "head",
+            "lane": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "stash",
+      "title": "git stash",
+      "category": "Stash",
+      "shortExplanation": "Shelve uncommitted work temporarily without committing it.",
+      "syntax": [
+        "git stash",
+        "git stash pop",
+        "git stash list"
+      ],
+      "hints": [
+        "Use this when you need to switch branches but aren't ready to commit yet.",
+        "Stashes are stored as a stack — `pop` always takes the most recent one.",
+        "Your working directory is returned to a clean state right after stashing."
+      ],
+      "howItWorks": "git stash takes your uncommitted changes (staged and unstaged) and saves them as a special commit-like object off to the side, then resets your working directory and index to match HEAD. `stash pop` reapplies that saved snapshot on top of your current state and removes it from the stash stack.",
+      "sandboxSeed": "stash",
+      "beforeGraph": {
+        "caption": "You have staged and unstaged edits, but you need to switch branches right now.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "application-local.yml"
+          ],
+          "working": [
+            "PaymentService.java"
+          ]
+        }
+      },
+      "afterGraph": {
+        "caption": "The changes move to a stash saved off to the side; the working tree is clean again. pop brings them back later.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [],
+          "working": [],
+          "stash": [
+            "stash@{0}: WIP on main"
+          ]
+        }
+      }
+    },
+    {
+      "id": "restore",
+      "title": "git restore <file>",
+      "category": "Undo",
+      "shortExplanation": "Discard unstaged changes to a file.",
+      "syntax": [
+        "git restore application-local.yml"
+      ],
+      "hints": [
+        "This is NOT reversible — the discarded edits are gone for good.",
+        "Only affects unstaged changes; staged changes are untouched.",
+        "Use this when you've made edits you've decided you don't want at all."
+      ],
+      "howItWorks": "git restore overwrites the working directory copy of a file with the version currently in the index (or HEAD, depending on flags), discarding any unstaged edits.",
+      "sandboxSeed": "add",
+      "beforeGraph": {
+        "caption": "You have unwanted unstaged edits to application-local.yml in the working tree.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "working": [
+            "application-local.yml"
+          ]
+        }
+      },
+      "afterGraph": {
+        "caption": "The working copy is overwritten with the indexed version. The edits are discarded — this can't be undone.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "working": []
+        }
+      }
+    },
+    {
+      "id": "reset-unstage",
+      "title": "git reset HEAD <file>",
+      "category": "Undo",
+      "shortExplanation": "Unstage a file (undo git add).",
+      "syntax": [
+        "git reset HEAD application-local.yml"
+      ],
+      "hints": [
+        "This does not touch your actual edits — only removes the file from staging.",
+        "Reversible: you can just `git add` it again.",
+        "Common fix for 'I staged the wrong file' moments."
+      ],
+      "howItWorks": "git reset HEAD <file> resets the index entry for that file to match HEAD, effectively removing it from the staging area while leaving the working directory copy exactly as it was.",
+      "sandboxSeed": "commit",
+      "beforeGraph": {
+        "caption": "You accidentally staged application-local.yml.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "application-local.yml"
+          ],
+          "working": []
+        }
+      },
+      "afterGraph": {
+        "caption": "The index entry is reset to HEAD, so the file leaves staging — but your edits stay put in the working tree.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [],
+          "working": [
+            "application-local.yml"
+          ]
+        }
+      }
+    },
+    {
+      "id": "reset-soft",
+      "title": "git reset --soft HEAD~1",
+      "category": "Undo",
+      "shortExplanation": "Undo the last commit, keeping changes staged.",
+      "syntax": [
+        "git reset --soft HEAD~1"
+      ],
+      "hints": [
+        "Your files and staged changes are untouched — only the commit itself is undone.",
+        "Great for 'I committed too early, let me add more before committing again.'",
+        "Reversible: your changes are sitting right there in staging afterward."
+      ],
+      "howItWorks": "git reset --soft moves the current branch pointer back one commit, but leaves both the index and working directory unchanged — so the content of that undone commit reappears as staged changes.",
+      "sandboxSeed": "reset",
+      "beforeGraph": {
+        "caption": "main points at c9d, your most recent commit.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": []
+        }
+      },
+      "afterGraph": {
+        "caption": "main moves back to b2e; c9d becomes unreachable. Its changes reappear staged — nothing on disk is lost.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0,
+            "kind": "ghost"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "PatientController.java"
+          ]
+        }
+      }
+    },
+    {
+      "id": "reset-hard",
+      "title": "git reset --hard HEAD~1",
+      "category": "Undo",
+      "shortExplanation": "Undo the last commit AND discard all its changes.",
+      "syntax": [
+        "git reset --hard HEAD~1"
+      ],
+      "hints": [
+        "This is destructive — the changes from that commit are gone, not just unstaged.",
+        "Use only when you're sure you want to throw the last commit's work away entirely.",
+        "Never use --hard on commits you've already pushed and shared — use revert instead."
+      ],
+      "howItWorks": "git reset --hard moves the branch pointer back one commit AND overwrites both the index and the working directory to match that earlier commit, permanently discarding any changes introduced after it (unless recovered via reflog).",
+      "sandboxSeed": "reset",
+      "beforeGraph": {
+        "caption": "main is at c9d, and you also have some uncommitted work in the tree.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "working": [
+            "half-done.js"
+          ]
+        }
+      },
+      "afterGraph": {
+        "caption": "main moves back to b2e AND the index and working tree are wiped to match it — c9d's changes are gone.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0,
+            "kind": "ghost"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "working": [],
+          "staged": []
+        }
+      }
+    },
+    {
+      "id": "revert",
+      "title": "git revert <hash>",
+      "category": "Undo",
+      "shortExplanation": "Create a new commit that undoes a previous one.",
+      "syntax": [
+        "git revert f772719"
+      ],
+      "hints": [
+        "Unlike reset, this doesn't rewrite history — it adds a new commit on top.",
+        "Safe to use on branches that have already been pushed and shared.",
+        "The original 'bad' commit still exists in history — it's just cancelled out by the new one."
+      ],
+      "howItWorks": "git revert computes the inverse of the changes introduced by the target commit, then creates a brand-new commit applying that inverse on top of the current branch. History is preserved and additive, which is why it's safe on shared branches.",
+      "sandboxSeed": "revert",
+      "beforeGraph": {
+        "caption": "c9d introduced a bug, but it's already been pushed — you can't safely rewrite it.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "A new commit applies the inverse of c9d's changes. History only grows — c9d is still there, just cancelled out.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          },
+          {
+            "id": "r5e",
+            "col": 3,
+            "lane": 0,
+            "kind": "new"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ],
+          "r5e": [
+            "c9d"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "r5e",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "r5e",
+            "kind": "head"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rm-cached",
+      "title": "git rm --cached",
+      "category": "Undo",
+      "shortExplanation": "Stop tracking a file without deleting it from disk.",
+      "syntax": [
+        "git rm --cached target/myapp.jar",
+        "echo \"target/\" >> .gitignore",
+        "git commit -m \"stop tracking build output\""
+      ],
+      "hints": [
+        "The file stays on your disk — only git's tracking of it is removed.",
+        "Pair this with adding the path to .gitignore so it doesn't get re-added by accident.",
+        "Common fix for 'I accidentally committed a build artifact or secrets file.'"
+      ],
+      "howItWorks": "git rm --cached removes the file's entry from the index (staging it as a deletion) but skips deleting it from the working directory. The next commit records that removal, so future git status/add calls no longer track that file.",
+      "sandboxSeed": "commit",
+      "beforeGraph": {
+        "caption": "A build artifact, target/myapp.jar, was committed by accident and is currently tracked.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "tracked": [
+            "target/myapp.jar"
+          ]
+        }
+      },
+      "afterGraph": {
+        "caption": "It's removed from the index (staged as a deletion) yet stays on disk. The next commit records that it's no longer tracked.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          }
+        ],
+        "areas": {
+          "staged": [
+            "- target/myapp.jar"
+          ],
+          "untracked": [
+            "target/myapp.jar"
+          ]
+        }
+      }
+    },
+    {
+      "id": "cherry-pick",
+      "title": "git cherry-pick",
+      "category": "Advanced",
+      "shortExplanation": "Apply one specific commit from another branch without merging the whole branch.",
+      "syntax": [
+        "git checkout main",
+        "git cherry-pick a3f9c12"
+      ],
+      "hints": [
+        "Only the changes from that single commit are applied — everything else on that branch is ignored.",
+        "Useful for grabbing a critical fix from a feature branch without merging unfinished work.",
+        "Creates a brand-new commit on your current branch with the same changes (and a new hash)."
+      ],
+      "howItWorks": "git cherry-pick takes the diff introduced by the specified commit (relative to its own parent) and applies that diff on top of your current branch, creating a new commit with the same message/content but a different parent and hash.",
+      "sandboxSeed": "cherry",
+      "beforeGraph": {
+        "caption": "feature has two commits, but you only want the fix in f2b — not f1a, and not a whole merge.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1
+          },
+          {
+            "id": "f2b",
+            "col": 2,
+            "lane": 1,
+            "kind": "focus"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "a1c"
+          ],
+          "f2b": [
+            "f1a"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "b2e",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "b2e",
+            "kind": "head"
+          },
+          {
+            "name": "feature",
+            "at": "f2b",
+            "kind": "branch",
+            "lane": 1
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "f2b's diff is applied on main as a brand-new commit (new hash). feature is left completely untouched.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "f1a",
+            "col": 1,
+            "lane": 1
+          },
+          {
+            "id": "f2b",
+            "col": 2,
+            "lane": 1,
+            "kind": "focus"
+          },
+          {
+            "id": "cp7",
+            "col": 2,
+            "lane": 0,
+            "kind": "new"
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "f1a": [
+            "a1c"
+          ],
+          "f2b": [
+            "f1a"
+          ],
+          "cp7": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "cp7",
+            "kind": "branch",
+            "new": true
+          },
+          {
+            "name": "HEAD",
+            "at": "cp7",
+            "kind": "head"
+          },
+          {
+            "name": "feature",
+            "at": "f2b",
+            "kind": "branch",
+            "lane": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "tag",
+      "title": "git tag",
+      "category": "Advanced",
+      "shortExplanation": "Mark a commit with a release name — used in CI/CD pipelines.",
+      "syntax": [
+        "git tag v1.0.0",
+        "git push origin v1.0.0",
+        "git tag"
+      ],
+      "hints": [
+        "Tags don't move automatically the way branches do — they permanently mark one commit.",
+        "Tags aren't pushed by default — you must push them explicitly.",
+        "Commonly used to trigger release pipelines (e.g. a CI job watching for v* tags)."
+      ],
+      "howItWorks": "git tag creates a ref (under refs/tags/) pointing permanently at a specific commit. Unlike a branch ref, a tag ref is not intended to move as new commits are added.",
+      "sandboxSeed": "log0",
+      "beforeGraph": {
+        "caption": "c9d is the commit you want to ship as a release.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          }
+        ]
+      },
+      "afterGraph": {
+        "caption": "A permanent tag ref, v1.0.0, is pinned to c9d. Unlike main, it won't move when you commit again.",
+        "nodes": [
+          {
+            "id": "a1c",
+            "col": 0,
+            "lane": 0
+          },
+          {
+            "id": "b2e",
+            "col": 1,
+            "lane": 0
+          },
+          {
+            "id": "c9d",
+            "col": 2,
+            "lane": 0
+          }
+        ],
+        "parents": {
+          "b2e": [
+            "a1c"
+          ],
+          "c9d": [
+            "b2e"
+          ]
+        },
+        "refs": [
+          {
+            "name": "main",
+            "at": "c9d",
+            "kind": "branch"
+          },
+          {
+            "name": "HEAD",
+            "at": "c9d",
+            "kind": "head"
+          },
+          {
+            "name": "v1.0.0",
+            "at": "c9d",
+            "kind": "tag",
+            "new": true
+          }
+        ]
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "daily-feature-workflow",
+      "title": "Daily workflow: feature branch",
+      "description": "The typical end-to-end sequence for building and shipping a feature.",
+      "steps": [
+        "git checkout -b feature/something",
+        "git status",
+        "git diff",
+        "git add .",
+        "git commit -m \"meaningful message\"",
+        "git push origin feature/something",
+        "-- open PR on GitHub, get reviewed, merge into main --",
+        "git checkout main",
+        "git pull",
+        "git branch -d feature/something"
+      ],
+      "note": "Consider rendering this as a guided, multi-step lesson path that chains several command pages together, distinct from the single-command detail pages."
+    }
+  ]
+}

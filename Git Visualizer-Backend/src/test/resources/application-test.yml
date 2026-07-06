@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:gitviz-test;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+management:
+  health:
+    redis:
+      enabled: false
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173
+  admin:
+    api-key: test-admin-key
+  content:
+    seed-file: classpath:git-commands-content.json
+  ratelimit:
+    enabled: true
+    backend: local
+    # High enough that ordinary integration tests never trip the limiter;
+    # the dedicated rate-limit test overrides these properties.
+    capacity: 100000
+    refill-tokens: 100000
+    refill-period-seconds: 60

@@ -1,0 +1,8 @@
+target/
+!.mvn/wrapper/maven-wrapper.properties
+.idea/
+*.iml
+.vscode/
+*.log
+.DS_Store
+dependency-check-report.*

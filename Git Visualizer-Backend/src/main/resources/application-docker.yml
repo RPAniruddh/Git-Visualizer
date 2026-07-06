@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://postgres:5432/gitviz}
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+
+management:
+  health:
+    redis:
+      enabled: true
+
+app:
+  ratelimit:
+    backend: ${RATELIMIT_BACKEND:redis}
