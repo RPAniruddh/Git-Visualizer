@@ -6,6 +6,7 @@ import Workspace from './components/Workspace.jsx';
 import ErrorScreen from './components/ErrorScreen.jsx';
 import ResetModal from './components/ResetModal.jsx';
 import NotFound from './components/NotFound.jsx';
+import LoadingScreen from './components/LoadingScreen.jsx';
 
 function readLearned() {
   try { return JSON.parse(localStorage.getItem('gv-learned-v2') || '{}'); } catch { return {}; }
@@ -53,13 +54,7 @@ export default function App() {
   }, []);
 
   if (error) return <ErrorScreen error={error} />;
-  if (!content) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gv-muted)', fontSize: 14 }}>
-        Loading command library…
-      </div>
-    );
-  }
+  if (!content) return <LoadingScreen />;
 
   const shared = { content, dark, toggleTheme, learned, markLearned, requestReset: () => setConfirmReset(true) };
 
