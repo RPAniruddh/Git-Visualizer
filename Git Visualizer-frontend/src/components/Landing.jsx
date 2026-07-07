@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listByCategory } from '../api.js';
 import Footer from './Footer.jsx';
@@ -9,16 +9,46 @@ const HERO_WORDS = ['thinking.', 'doing.', 'tracking.', 'remembering.', 'pointin
 export default function Landing({ content, dark, toggleTheme, learned, requestReset }) {
   const navigate = useNavigate();
   const [heroIdx, setHeroIdx] = useState(0);
+  const [query, setQuery] = useState('');
+  const searchRef = useRef(null);
 
   useEffect(() => {
     const t = setInterval(() => setHeroIdx((i) => (i + 1) % HERO_WORDS.length), 1800);
     return () => clearInterval(t);
   }, []);
 
+  // "/" focuses the search box (unless already typing in a field)
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const groups = listByCategory(content);
   const total = content.commands.length;
   const learnedCount = Object.keys(learned).filter((k) => learned[k]).length;
   const progressPct = total ? Math.round((learnedCount / total) * 100) : 0;
+
+  const q = query.trim().toLowerCase();
+  const filteredGroups = useMemo(() => {
+    if (!q) return groups;
+    return groups
+      .map((g) => ({
+        ...g,
+        commands: g.commands.filter((c) =>
+          c.title.toLowerCase().includes(q) ||
+          c.id.toLowerCase().includes(q) ||
+          c.shortExplanation.toLowerCase().includes(q) ||
+          c.category.toLowerCase().includes(q)),
+      }))
+      .filter((g) => g.commands.length);
+  }, [q, groups]);
+  const matchCount = filteredGroups.reduce((n, g) => n + g.commands.length, 0);
 
   return (
     <>
@@ -59,7 +89,41 @@ export default function Landing({ content, dark, toggleTheme, learned, requestRe
           </div>
         </div>
 
-        {groups.map((g) => (
+        <div style={{ maxWidth: 520, marginBottom: 30, position: 'relative' }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gv-muted)" strokeWidth="2" strokeLinecap="round" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.5" y2="16.5" />
+          </svg>
+          <input
+            ref={searchRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setQuery(''); }}
+            placeholder="Search commands…  (e.g. undo, branch, commit)"
+            aria-label="Search git commands"
+            style={{ width: '100%', boxSizing: 'border-box', padding: '11px 38px', fontSize: 14, fontFamily: 'inherit', color: 'var(--gv-ink)', background: 'var(--gv-card)', border: '1px solid var(--gv-border)', borderRadius: 10, outline: 'none' }}
+          />
+          {query ? (
+            <span onClick={() => { setQuery(''); searchRef.current?.focus(); }} title="Clear" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--gv-muted)', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>×</span>
+          ) : (
+            <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--gv-muted)', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, border: '1px solid var(--gv-border)', borderRadius: 5, padding: '1px 6px', pointerEvents: 'none' }}>/</span>
+          )}
+        </div>
+
+        {q && (
+          <div style={{ fontSize: 12.5, color: 'var(--gv-muted)', marginBottom: 18 }}>
+            {matchCount} {matchCount === 1 ? 'command' : 'commands'} matching “{query.trim()}”
+          </div>
+        )}
+
+        {matchCount === 0 && (
+          <div style={{ padding: '32px 0 8px', color: 'var(--gv-text2)', fontSize: 14.5 }}>
+            No commands match “{query.trim()}”. Try a different term — or{' '}
+            <span onClick={() => { setQuery(''); searchRef.current?.focus(); }} style={{ color: 'var(--gv-accent)', cursor: 'pointer', fontWeight: 600 }}>clear the search</span>.
+          </div>
+        )}
+
+        {filteredGroups.map((g) => (
           <div key={g.category} style={{ marginBottom: 34 }}>
             <div style={{ fontSize: 11, letterSpacing: '.16em', color: 'var(--gv-muted)', fontWeight: 600, marginBottom: 14 }}>
               {g.category.toUpperCase()}
@@ -82,22 +146,24 @@ export default function Landing({ content, dark, toggleTheme, learned, requestRe
           </div>
         ))}
 
-        <div onClick={() => navigate('/free')} className="gv-freeplay" style={{ marginTop: 8, background: 'var(--gv-term)', borderRadius: 16, padding: '26px 30px', display: 'flex', alignItems: 'center', gap: 24, cursor: 'pointer', transition: 'transform .18s ease' }}>
-          <svg viewBox="0 0 120 44" style={{ width: 120, height: 44, flex: 'none' }}>
-            <line x1="12" y1="16" x2="52" y2="16" stroke="#2F6BD8" strokeWidth="2" />
-            <line x1="52" y1="16" x2="92" y2="16" stroke="#2F6BD8" strokeWidth="2" />
-            <line x1="52" y1="16" x2="76" y2="34" stroke="#7C5CE6" strokeWidth="2" />
-            <circle cx="12" cy="16" r="6" fill="#171B26" stroke="#2F6BD8" strokeWidth="2" />
-            <circle cx="52" cy="16" r="6" fill="#171B26" stroke="#2F6BD8" strokeWidth="2" />
-            <circle cx="92" cy="16" r="6" fill="#2F6BD8" />
-            <circle cx="76" cy="34" r="6" fill="#171B26" stroke="#7C5CE6" strokeWidth="2" />
-          </svg>
-          <div>
-            <div style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>Free-play sandbox</div>
-            <div style={{ color: '#8B93A7', fontSize: 13.5, marginTop: 4 }}>A live repository and every command, no rails. Break things on purpose.</div>
+        {!q && (
+          <div onClick={() => navigate('/free')} className="gv-freeplay" style={{ marginTop: 8, background: 'var(--gv-term)', borderRadius: 16, padding: '26px 30px', display: 'flex', alignItems: 'center', gap: 24, cursor: 'pointer', transition: 'transform .18s ease' }}>
+            <svg viewBox="0 0 120 44" style={{ width: 120, height: 44, flex: 'none' }}>
+              <line x1="12" y1="16" x2="52" y2="16" stroke="#2F6BD8" strokeWidth="2" />
+              <line x1="52" y1="16" x2="92" y2="16" stroke="#2F6BD8" strokeWidth="2" />
+              <line x1="52" y1="16" x2="76" y2="34" stroke="#7C5CE6" strokeWidth="2" />
+              <circle cx="12" cy="16" r="6" fill="#171B26" stroke="#2F6BD8" strokeWidth="2" />
+              <circle cx="52" cy="16" r="6" fill="#171B26" stroke="#2F6BD8" strokeWidth="2" />
+              <circle cx="92" cy="16" r="6" fill="#2F6BD8" />
+              <circle cx="76" cy="34" r="6" fill="#171B26" stroke="#7C5CE6" strokeWidth="2" />
+            </svg>
+            <div>
+              <div style={{ color: '#fff', fontWeight: 600, fontSize: 16 }}>Free-play sandbox</div>
+              <div style={{ color: '#8B93A7', fontSize: 13.5, marginTop: 4 }}>A live repository and every command, no rails. Break things on purpose.</div>
+            </div>
+            <div style={{ marginLeft: 'auto', color: '#8FD3C7', fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>git … ↵</div>
           </div>
-          <div style={{ marginLeft: 'auto', color: '#8FD3C7', fontFamily: "'JetBrains Mono',monospace", fontSize: 13 }}>git … ↵</div>
-        </div>
+        )}
       </div>
       <Footer />
     </>
