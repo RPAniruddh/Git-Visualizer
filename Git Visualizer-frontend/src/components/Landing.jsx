@@ -5,11 +5,13 @@ import Footer from './Footer.jsx';
 import ThemeButton from './ThemeButton.jsx';
 
 const HERO_WORDS = ['thinking.', 'doing.', 'tracking.', 'remembering.', 'pointing at.', 'rewriting.'];
+const MONO = "'JetBrains Mono',monospace";
 
 export default function Landing({ content, dark, toggleTheme, learned, requestReset }) {
   const navigate = useNavigate();
   const [heroIdx, setHeroIdx] = useState(0);
   const [query, setQuery] = useState('');
+  const [hovered, setHovered] = useState(null);
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -124,22 +126,27 @@ export default function Landing({ content, dark, toggleTheme, learned, requestRe
         )}
 
         {filteredGroups.map((g) => (
-          <div key={g.category} style={{ marginBottom: 34 }}>
-            <div style={{ fontSize: 11, letterSpacing: '.16em', color: 'var(--gv-muted)', fontWeight: 600, marginBottom: 14 }}>
+          <div key={g.category} style={{ marginBottom: 26 }}>
+            <div style={{ fontSize: 11, letterSpacing: '.16em', color: 'var(--gv-muted)', fontWeight: 600, marginBottom: 12 }}>
               {g.category.toUpperCase()}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(224px,1fr))', gap: 14 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {g.commands.map((c) => (
-                <div key={c.id} onClick={() => navigate(`/commands/${c.id}`)} className="hv-lift" style={{ background: 'var(--gv-card)', border: '1px solid var(--gv-border)', borderRadius: 14, padding: '17px 19px', cursor: 'pointer', transition: 'transform .18s ease,box-shadow .18s ease', animation: 'gvFade .4s ease both' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: 'var(--gv-accent)', fontWeight: 500 }}>{c.title}</div>
-                    {learned[c.id] ? (
-                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#0E9488', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>✓</div>
-                    ) : (
-                      <div style={{ width: 20, height: 20, borderRadius: '50%', border: '1.5px dashed var(--gv-dash)', flex: 'none', boxSizing: 'border-box' }} />
-                    )}
-                  </div>
-                  <div style={{ fontSize: 13.5, lineHeight: 1.4, color: 'var(--gv-text2)', marginTop: 9 }}>{c.shortExplanation}</div>
+                <div
+                  key={c.id}
+                  onClick={() => navigate(`/commands/${c.id}`)}
+                  onMouseEnter={() => setHovered(c.id)}
+                  onMouseLeave={() => setHovered((h) => (h === c.id ? null : h))}
+                  className="hv-accent gv-chip"
+                  style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: MONO, fontSize: 13, color: 'var(--gv-accent)', background: 'var(--gv-card)', border: '1px solid var(--gv-border)', borderRadius: 9, padding: '8px 13px', cursor: 'pointer', animation: 'gvFade .3s ease both' }}
+                >
+                  <span>{c.title}</span>
+                  {learned[c.id] && <span style={{ color: '#0E9488', fontSize: 11 }}>✓</span>}
+                  {hovered === c.id && (
+                    <div style={{ position: 'absolute', top: 'calc(100% + 7px)', left: 0, zIndex: 20, width: 'max-content', maxWidth: 240, background: 'var(--gv-ink)', color: 'var(--gv-on-ink)', fontFamily: "'Instrument Sans',sans-serif", fontSize: 12, lineHeight: 1.45, padding: '8px 11px', borderRadius: 8, boxShadow: '0 8px 22px rgba(23,27,38,.22)', pointerEvents: 'none' }}>
+                      {c.shortExplanation}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
