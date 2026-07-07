@@ -71,4 +71,31 @@ class RateLimitIT {
                     .andExpect(status().isOk());
         }
     }
+
+    @Test
+    void rateLimited429CarriesCorsHeaderForAllowedOrigin() throws Exception {
+        String origin = "http://localhost:5173"; // allowed by the test profile
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(get("/api/v1/commands").header("Origin", origin).header("X-Forwarded-For", "10.4.4.4"))
+                    .andExpect(status().isOk());
+        }
+        // The filter runs before Spring Security, so it must add the CORS header itself
+        // or the browser would block the 429 as a CORS error.
+        mockMvc.perform(get("/api/v1/commands").header("Origin", origin).header("X-Forwarded-For", "10.4.4.4"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Access-Control-Allow-Origin", origin));
+    }
+
+    @Test
+    void rateLimited429OmitsCorsHeaderForDisallowedOrigin() throws Exception {
+        // Drain the bucket with plain requests (no Origin → 200), then hit the empty
+        // bucket from a disallowed origin: the 429 must not leak an allow-origin header.
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(get("/api/v1/commands").header("X-Forwarded-For", "10.5.5.5"))
+                    .andExpect(status().isOk());
+        }
+        mockMvc.perform(get("/api/v1/commands").header("Origin", "https://evil.example.com").header("X-Forwarded-For", "10.5.5.5"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
+    }
 }
