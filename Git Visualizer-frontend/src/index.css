@@ -42,6 +42,11 @@ body {
 .gv-topbar { display: none }
 .gv-backdrop { display: none }
 @media (max-width: 1024px) {
+  /* Stacked layout: pack the wrapped topbar/main/right lines at the top instead of
+     letting the default align-content:stretch inflate each to fill min-height:100vh,
+     which spread the sections apart and stretched the top bar. Desktop (single line)
+     keeps the default stretch so its columns still fill the viewport height. */
+  .gv-workrow { align-content: flex-start !important }
   .gv-topbar { display: flex !important; align-items: center; gap: 12px; flex: 1 1 100%; padding: 11px 16px; border-bottom: 1px solid var(--gv-border); background: var(--gv-bg2); position: sticky; top: 0; z-index: 30 }
   /* Sidebar becomes an off-canvas drawer */
   .gv-sidebar { position: fixed !important; top: 0; left: 0; bottom: 0; width: 274px !important; flex: none !important; z-index: 60; transform: translateX(-105%); transition: transform .25s ease; box-shadow: 0 0 44px rgba(23, 27, 38, .22); border-right: 1px solid var(--gv-border) !important; overflow-y: auto; padding: 20px 0 16px !important }

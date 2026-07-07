@@ -130,7 +130,7 @@ export default function Workspace({ content, dark, toggleTheme, learned, markLea
 
   return (
     <>
-      <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '100vh' }}>
+      <div className="gv-workrow" style={{ display: 'flex', flexWrap: 'wrap', minHeight: '100vh' }}>
         {/* mobile top bar */}
         <div className="gv-topbar">
           <div onClick={() => setSideOpen((o) => !o)} style={{ fontSize: 18, lineHeight: 1, cursor: 'pointer', padding: '6px 10px', border: '1px solid var(--gv-border)', borderRadius: 8, background: 'var(--gv-card)', userSelect: 'none' }}>☰</div>
