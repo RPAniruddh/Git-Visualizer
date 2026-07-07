@@ -1,0 +1,10 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" rx="7" fill="#171B26"/>
+  <!-- commit graph: a branch splitting off the main line -->
+  <line x1="9" y1="13" x2="23" y2="13" stroke="#2F6BD8" stroke-width="2.4"/>
+  <line x1="16" y1="13" x2="22" y2="23" stroke="#7C5CE6" stroke-width="2.4"/>
+  <circle cx="9" cy="13" r="3.1" fill="#171B26" stroke="#2F6BD8" stroke-width="2"/>
+  <circle cx="16" cy="13" r="3.1" fill="#171B26" stroke="#2F6BD8" stroke-width="2"/>
+  <circle cx="23" cy="13" r="3.4" fill="#2F6BD8"/>
+  <circle cx="22" cy="23" r="3.1" fill="#171B26" stroke="#7C5CE6" stroke-width="2"/>
+</svg>
