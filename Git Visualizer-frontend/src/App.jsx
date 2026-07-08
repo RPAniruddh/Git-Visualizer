@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Route, Routes, useParams } from 'react-router-dom';
+import { Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { loadContent } from './api.js';
 import Landing from './components/Landing.jsx';
 import Workspace from './components/Workspace.jsx';
@@ -60,6 +60,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--gv-bg)' }}>
+      <ScrollToTop />
       {confirmReset && <ResetModal onConfirm={doReset} onCancel={() => setConfirmReset(false)} />}
       <Routes>
         <Route path="/" element={<Landing {...shared} />} />
@@ -69,6 +70,15 @@ export default function App() {
       </Routes>
     </div>
   );
+}
+
+// Reset scroll to the top on every route change — React Router preserves the
+// window scroll position across navigations, which otherwise leaves a new page
+// scrolled down wherever the previous one was.
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
 }
 
 function CommandRoute({ shared }) {
