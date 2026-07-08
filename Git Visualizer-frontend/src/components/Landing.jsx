@@ -11,7 +11,8 @@ export default function Landing({ content, dark, toggleTheme, learned, requestRe
   const navigate = useNavigate();
   const [heroIdx, setHeroIdx] = useState(0);
   const [query, setQuery] = useState('');
-  const [activeCat, setActiveCat] = useState('all');
+  // Open on the first category (a lighter first view) rather than the full "All" list.
+  const [activeCat, setActiveCat] = useState(content.categories[0] || 'all');
   const searchRef = useRef(null);
 
   useEffect(() => {
