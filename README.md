@@ -7,21 +7,23 @@ then try it yourself in a live sandbox. No git installation required — the who
 simulation runs in your browser.
 
 **Live demo:** [git-visualizer-six.vercel.app](https://git-visualizer-six.vercel.app)
-*(backend runs on a free tier and may take ~30–60s to wake up on the first request)*
+*(the backend is kept warm through the day; roughly between 2–6 AM IST it's allowed to
+sleep, so the first request in that window can take ~50s to wake up)*
 
 ---
 
 ## What it does
 
-- **26 commands** across 8 categories — Setup, Checking State, Saving Work, Branching,
+- **32 commands** across 8 categories — Setup, Checking State, Saving Work, Branching,
   Rebase, Stash, Undo, and Advanced — each with a plain-language explanation, syntax
   examples, and hints.
 - **Before → After commit graphs** for every command, hand-designed to show exactly what
   changes: which nodes move, which refs shift, what gets staged.
 - **A live sandbox** — type real git commands against a simulated repository and watch
   the graph react in real time. Nothing is destructive; reset anytime.
-- **A guided workflow** — a full daily feature-branch sequence chained across multiple
-  commands, for the bigger picture.
+- **Browse by category, or search** — filter commands with the category pills or the
+  search box (press `/` to jump to it), plus light/dark themes.
+- **No accounts, no install** — the whole simulation runs in your browser.
 
 ## Tech stack
 
@@ -64,6 +66,31 @@ See [`Git Visualizer-Backend/README.md`](Git%20Visualizer-Backend/README.md) and
 [`Git Visualizer-frontend/README.md`](Git%20Visualizer-frontend/README.md) for full
 details — environment variables, test/verification commands, and how content is
 seeded and updated.
+
+---
+
+## FAQ
+
+**Do I need to install Git or sign up for anything?**
+No. There are no accounts and nothing to install — the entire git simulation runs in
+your browser. Open the site and start.
+
+**How is my progress tracked?**
+The "X of 32 visited" counter and the per-command checkmarks live only in your browser's
+`localStorage` (under the key `gv-learned-v2`) — there's no account, and nothing is sent
+to any server. Because it's per-browser, your progress doesn't follow you to another
+device or browser, and clearing your browser data (or using the in-app **Reset progress**
+button) wipes it. Your light/dark theme choice is stored the same way (`gv-theme`).
+
+**Does anything I type in the live sandbox get sent to a server?**
+No. The sandbox is a pure client-side simulation — commands never touch a real repository
+or the backend. The backend only serves the read-only lesson content (explanations,
+hints, and graph data).
+
+**Why is the first load sometimes slow?**
+The backend runs on a free tier that sleeps after inactivity. It's kept warm through the
+day, but roughly between 2–6 AM IST it's allowed to sleep, so the first request in that
+window can take ~50 seconds while it wakes up. After that it's instant.
 
 ---
 
